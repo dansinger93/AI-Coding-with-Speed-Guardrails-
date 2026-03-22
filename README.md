@@ -4,6 +4,14 @@
 [![GitHub stars](https://img.shields.io/github/stars/dansinger93/AI-Coding-with-Speed-Guardrails-?style=flat)](https://github.com/dansinger93/AI-Coding-with-Speed-Guardrails-)
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/dansinger93/AI-Coding-with-Speed-Guardrails-/releases)
 
+<div align="center">
+  <img src="assets/logo-single.jpg" alt="Performance 100" width="150" style="margin: 20px 0;">
+</div>
+
+<div align="center">
+  <img src="assets/logo-grid.jpg" alt="All metrics 100" width="100%" style="max-width: 600px; margin: 20px 0;">
+</div>
+
 **Stop your AI from pushing bloated, slow code to production.**
 
 This is a complete performance verification system that forces AI coding assistants (Claude Code, Cursor, GitHub Copilot, etc.) to validate code against **three** critical measures:
