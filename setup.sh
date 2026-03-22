@@ -12,6 +12,9 @@ echo -e "${BLUE}======================================${NC}"
 echo -e "${BLUE}AI Performance Guardrails — Setup${NC}"
 echo -e "${BLUE}======================================${NC}"
 echo ""
+echo -e "${YELLOW}Need help setting up Google Cloud credentials?${NC}"
+echo "See: GOOGLE_CLOUD_SETUP.md (walks through all steps)"
+echo ""
 
 # ============================================================================
 # SECTION 1: Preflight Checks

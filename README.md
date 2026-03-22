@@ -53,6 +53,10 @@ Then add to `package.json`:
 
 ### Option B: Full Power (Lighthouse + GA + GSC — 5 minutes)
 
+**First time setting up Google Cloud credentials?**
+→ [Follow the credential setup guide](./GOOGLE_CLOUD_SETUP.md) (walks through everything step-by-step)
+
+**Already have credentials?**
 1. **Grab the setup script:**
 
 ```bash
@@ -62,18 +66,12 @@ bash setup.sh
 
 The script will:
 - Ask for your GA Property ID and GSC Site URL
-- Prompt for your Google Cloud service account JSON
+- Prompt for your Google Cloud service account JSON file path
 - Install MCP servers (analytics-mcp, mcp-server-gsc)
 - Wire everything into Claude Code settings
 - Run a smoke test
 
-2. **Ensure service account permissions:**
-
-In Google Cloud, add the service account email to:
-- **Google Analytics**: Property admin role
-- **Google Search Console**: Property administrator
-
-3. **Add these files to your project** (same as Option A):
+2. **Add these files to your project** (same as Option A):
 
 ```json
 {
@@ -82,6 +80,8 @@ In Google Cloud, add the service account email to:
   }
 }
 ```
+
+3. **Restart Claude Code** so it loads the new MCP servers
 
 **Done.** The full 3-phase loop is now active.
 
