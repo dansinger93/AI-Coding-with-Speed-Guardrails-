@@ -1,5 +1,9 @@
 # AI Performance Guardrails 🛡️
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub stars](https://img.shields.io/github/stars/dansinger93/AI-Coding-with-Speed-Guardrails-?style=flat)](https://github.com/dansinger93/AI-Coding-with-Speed-Guardrails-)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/dansinger93/AI-Coding-with-Speed-Guardrails-/releases)
+
 **Stop your AI from pushing bloated, slow code to production.**
 
 This is a complete performance verification system that forces AI coding assistants (Claude Code, Cursor, GitHub Copilot, etc.) to validate code against **three** critical measures:
