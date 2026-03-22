@@ -6,3 +6,7 @@ dist/
 *.log
 .env
 .env.local
+.env.analytics
+*.service-account.json
+service-account-key.json
+.perf-baseline.json

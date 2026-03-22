@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip -l \"ai-performance-guardrails \\(2\\).zip\")",
+      "Bash(unzip -q \"ai-performance-guardrails \\(2\\).zip\" -d temp_extract)",
+      "Bash(cp temp_extract/CLAUDE.md .)",
+      "Bash(cp temp_extract/lighthouserc.js .)",
+      "Bash(mkdir -p scripts)",
+      "Bash(cp temp_extract/scripts/check-speed.js scripts/)",
+      "Bash(cd:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(chmod +x setup.sh)",
+      "Bash(chmod +x scripts/check-analytics.js)",
+      "Bash(chmod +x scripts/detect-claude-config.sh)",
+      "Bash(node scripts/check-analytics.js baseline)",
+      "Bash(node scripts/check-analytics.js --smoke-test)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}

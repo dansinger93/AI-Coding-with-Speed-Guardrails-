@@ -2,33 +2,42 @@
 
 **Stop your AI from pushing bloated, slow code to production.**
 
-This is a strict verification loop that forces AI coding assistants (Claude Code, Cursor, GitHub Copilot, etc.) to run Lighthouse performance checks *before* finalizing code chunks. If performance drops below 100%, the AI automatically refines its own code until it passes.
+This is a complete performance verification system that forces AI coding assistants (Claude Code, Cursor, GitHub Copilot, etc.) to validate code against **three** critical measures:
+
+1. **Synthetic Tests** — Lighthouse (100% performance required)
+2. **Real User Data** — Google Analytics Core Web Vitals (must not regress)
+3. **Search Health** — Google Search Console (rankings, crawl errors, indexing)
+
+If any check fails, the AI automatically refactors its own code until it passes all three.
 
 ## Why use this?
 
-✅ **Zero Setup Friction** — Drop 3 files into your project and you're done
-✅ **Self-Healing Code** — AI reads Lighthouse failures and fixes them automatically
-✅ **No Manual Audits** — Keep Next.js, React, Vue apps blazing fast without you lifting a finger
-✅ **Instant Adoption** — Claude Code picks up `CLAUDE.md` automatically
+✅ **Bulletproof Code** — AI validates against both test scores AND real user data
+✅ **Zero Manual Setup** — One command installs everything (Lighthouse + GA + GSC)
+✅ **Self-Healing** — AI reads performance errors and fixes them automatically
+✅ **Graceful Degradation** — Works with just Lighthouse on day one, add GA/GSC later
+✅ **Distribution Ready** — Curl these files into any project
 
-## ⚡ One-Minute Installation
+---
 
-Run these commands in your project root:
+## ⚡ Installation (with or without analytics)
+
+### Option A: Lighthouse Only (Quickstart — 30 seconds)
+
+Drop these files into your project:
 
 ```bash
-# 1. Grab the AI instructions and Lighthouse config
+# 1. Core files
 curl -O https://raw.githubusercontent.com/YOUR_USERNAME/ai-performance-guardrails/main/CLAUDE.md
 curl -O https://raw.githubusercontent.com/YOUR_USERNAME/ai-performance-guardrails/main/lighthouserc.js
-
-# 2. Grab the enforcer script
 mkdir -p scripts
 curl -o scripts/check-speed.js https://raw.githubusercontent.com/YOUR_USERNAME/ai-performance-guardrails/main/scripts/check-speed.js
 
-# 3. Install the Lighthouse CI dependency (if not already installed)
+# 2. Install Lighthouse
 npm install -D @lhci/cli
 ```
 
-Then add this to your `package.json`:
+Then add to `package.json`:
 
 ```json
 {
@@ -38,139 +47,214 @@ Then add this to your `package.json`:
 }
 ```
 
-**That's it.** Claude Code will automatically load `CLAUDE.md` and enforce performance standards.
+**Done.** Claude Code will load `CLAUDE.md` and enforce Lighthouse checks.
 
 ---
 
-## How It Works
+### Option B: Full Power (Lighthouse + GA + GSC — 5 minutes)
 
-1. **You ask Claude Code to build/update code**
-2. **CLAUDE.md directive kicks in** — AI runs `npm run check-speed`
-3. **Lighthouse builds and tests your project** — Lighthouse CI validates performance
-4. **AI reads the results**:
-   - ✅ **Score ≥ 100%?** Code is committed. Done.
-   - ❌ **Score < 100%?** AI identifies the bottleneck and refactors automatically
-5. **Loop repeats** until performance target is met
+1. **Grab the setup script:**
+
+```bash
+curl -o setup.sh https://raw.githubusercontent.com/YOUR_USERNAME/ai-performance-guardrails/main/setup.sh
+bash setup.sh
+```
+
+The script will:
+- Ask for your GA Property ID and GSC Site URL
+- Prompt for your Google Cloud service account JSON
+- Install MCP servers (analytics-mcp, mcp-server-gsc)
+- Wire everything into Claude Code settings
+- Run a smoke test
+
+2. **Ensure service account permissions:**
+
+In Google Cloud, add the service account email to:
+- **Google Analytics**: Property admin role
+- **Google Search Console**: Property administrator
+
+3. **Add these files to your project** (same as Option A):
+
+```json
+{
+  "scripts": {
+    "check-speed": "node scripts/check-speed.js"
+  }
+}
+```
+
+**Done.** The full 3-phase loop is now active.
 
 ---
 
-## What Gets Enforced
+## How It Works: The 3-Phase Loop
 
-By default, `lighthouserc.js` enforces:
+### Phase 1 — Establish Baseline (Before Writing Code)
 
-- **Performance: 100%** (strict)
-- **Accessibility: ≥ 80%** (warning)
-- **Best Practices: ≥ 80%** (warning)
-- **SEO: ≥ 80%** (warning)
+```
+node scripts/check-analytics.js baseline
+```
 
-You can tweak thresholds in `lighthouserc.js` to match your standards.
+The AI captures:
+- 📊 Core Web Vitals (LCP, CLS, INP) from Google Analytics
+- 📈 Top slowest pages by URL
+- 🔍 Top search queries and CTR from Google Search Console
+- ⚠️ Any crawl errors or indexing failures
+
+These metrics are saved to `.perf-baseline.json` — the bar the AI cannot regress below.
+
+**If GA/GSC not configured**: Phase 1 is skipped silently. Lighthouse still runs.
+
+### Phase 2 — Write Code & Enforce Lighthouse (The Loop)
+
+```
+npm run check-speed  (repeats until 100%)
+```
+
+1. **You ask Claude Code to add/update code**
+2. **Claude builds and runs Lighthouse**
+3. **Results:**
+   - ✅ **100%?** Proceed to Phase 3
+   - ❌ **Below 100%?** Claude reads the error, identifies the bottleneck (large bundles, unoptimized images, main thread blocking), refactors, and retries
+
+This loop repeats until Lighthouse reports 100% performance.
+
+### Phase 3 — Validate Against Real User Data (After Lighthouse Passes)
+
+```
+node scripts/check-analytics.js validate
+```
+
+The AI compares current metrics against the baseline from Phase 1:
+- 📊 Did Core Web Vitals improve or hold steady?
+- 🔍 Did search rankings or CTR drop?
+- ⚠️ Are there new crawl errors?
+
+**Results:**
+- ✅ **Improved or stable?** Code is committed. Done.
+- ❌ **Regression detected?** Claude must refactor before committing.
+
+**If GA/GSC not configured**: Phase 3 is skipped silently. Code commits after Phase 2.
+
+---
+
+## What Gets Measured
+
+| Service | Metrics | What It Catches |
+|---------|---------|-----------------|
+| **Lighthouse** | Performance, Accessibility, Best Practices, SEO | Bloated bundles, unoptimized images, render-blocking resources, CLS issues |
+| **Google Analytics** | LCP, CLS, INP (Core Web Vitals) | Real user slowdowns that don't show in synthetic tests |
+| **Search Console** | Rankings, CTR, impressions, crawl errors | SEO regressions, indexing problems, search visibility drops |
 
 ---
 
 ## Customization
 
-### Change performance thresholds
+### Change Lighthouse thresholds
 
 Edit `lighthouserc.js`:
 
 ```javascript
 'categories:performance': ['error', { minScore: 0.95 }],  // 95% instead of 100%
+'categories:accessibility': ['warn', { minScore: 0.8 }],
 ```
 
-### Change the start command
+### Change the build/start command
 
-If you're not using Next.js, update `scripts/check-speed.js`:
+If you're not using Next.js, edit `scripts/check-speed.js`:
 
 ```javascript
-execSync('yarn dev', { stdio: 'inherit' });  // or 'npm start', etc.
+execSync('yarn build', { stdio: 'inherit' });  // Your build command
+execSync('yarn dev', { stdio: 'inherit' });    // Your dev server command
 ```
 
-### Disable specific checks
+### Skip individual Lighthouse checks
 
 In `lighthouserc.js`:
 
 ```javascript
-'cumululative-layout-shift': ['off'],  // Turn off CLS check
-```
-
----
-
-## Optional: Add Google Analytics MCP Server
-
-You can integrate the **Google Analytics Model Context Protocol (MCP)** server to give Claude Code access to your analytics data. This lets the AI make performance decisions based on real user metrics.
-
-### Setup GA MCP
-
-1. **Install the MCP server:**
-   ```bash
-   # Follow instructions at https://github.com/googleanalytics/google-analytics-mcp
-   ```
-
-2. **Add GA MCP to Claude Code settings** (in `settings.json`):
-   ```json
-   {
-     "mcpServers": {
-       "google-analytics": {
-         "command": "node",
-         "args": ["path/to/google-analytics-mcp/server.js"]
-       }
-     }
-   }
-   ```
-
-3. **Ask Claude Code to check your data:**
-   - "What's our Core Web Vitals score for the last 7 days?"
-   - "Which pages have the slowest load times?"
-   - "How did our performance metrics change after that deploy?"
-
-The AI can now correlate Lighthouse checks with real user experience data before committing code.
-
----
-
-## Example Workflow
-
-```
-You: "Add a hero section with background images"
-
-Claude Code:
-  1. Writes the component
-  2. Runs: npm run check-speed
-  3. ❌ Lighthouse: 68% (images are 2.3MB unoptimized)
-  4. Refactors: Adds next/image, WebP conversion, lazy loading
-  5. Runs: npm run check-speed
-  6. ✅ Lighthouse: 100% ← Code committed
+'cumulative-layout-shift': ['off'],  // Don't enforce CLS
+'first-contentful-paint': ['off'],   // Don't enforce FCP
 ```
 
 ---
 
 ## Troubleshooting
 
-### "Cannot find module @lhci/cli"
+### Lighthouse errors
 
+**"Cannot find module @lhci/cli"**
 ```bash
 npm install -D @lhci/cli
 ```
 
-### Lighthouse fails to connect to localhost:3000
+**"Cannot connect to localhost:3000"**
+- Ensure `npm run start` or `npm run dev` works for your project
+- Update the start command in `scripts/check-speed.js`
 
-- Make sure `npm run start` or `npm run dev` works for your project
-- Update the start command in `scripts/check-speed.js` if needed
+### Analytics setup issues
 
-### Performance threshold too strict
+**"Service account file not found"**
+- Download your service account JSON from Google Cloud Console
+- Ensure the path in `.env.analytics` is absolute
 
-Edit `lighthouserc.js` and lower the `minScore` value (0.0–1.0 scale).
+**"GA authentication failed (401)"**
+- Verify the service account email has "Analytics Viewer" role in GA
+- Check your property ID matches GA4 (not Universal Analytics)
+
+**"GSC authentication failed (403)"**
+- Ensure the service account email is added as a "Property Administrator" in GSC
+- Use the exact site URL (with https:// and trailing slash, or sc-domain: prefix)
+
+**"Data is older than 28 days"**
+- GA API requires at least 24 hours of data. If your site is new, Phase 1 may show minimal data initially.
+- The tool still works — Phase 2 (Lighthouse) runs regardless.
+
+### "My project is slow even after Lighthouse passes 100%"
+
+This is rare but can happen if:
+- Real user experience differs from synthetic test environment
+- Your hosting/CDN has regional performance issues
+- Third-party scripts (analytics, ads) are slower in production
+
+Check `.perf-baseline.json` and the validate report to see which metric regressed, then focus your optimization there.
+
+---
+
+## Example Workflow
+
+```
+You: "Add a carousel with 50 product images"
+
+Claude Code:
+  ├─ Phase 1: node scripts/check-analytics.js baseline
+  │  └─ Saves baseline: LCP=2.1s, CLS=0.08, 15 top queries recorded
+  │
+  ├─ Phase 2: npm run check-speed (loop)
+  │  ├─ Writes carousel component with img tags
+  │  ├─ Lighthouse: 34% (images unoptimized, 12MB bundle)
+  │  ├─ Refactors: next/image, WebP, lazy loading
+  │  ├─ Lighthouse: 87% (still has unused JS)
+  │  ├─ Removes dead code, code-splits routes
+  │  ├─ Lighthouse: 100% ✓
+  │
+  └─ Phase 3: node scripts/check-analytics.js validate
+     ├─ Current: LCP=1.9s, CLS=0.05 (IMPROVED ✓)
+     ├─ Queries: same 15, CTR stable (GOOD ✓)
+     └─ Code committed
+```
 
 ---
 
 ## Contributing
 
-Found a bug? Have a better check? Submit a PR!
+Found a bug? Have a feature idea? Submit a PR!
 
 We welcome contributions for:
-- Playwright/E2E testing integration
-- CI/CD pipeline examples (GitHub Actions, GitLab, etc.)
-- Framework-specific optimizations
-- Better error messaging
+- Framework-specific optimizations (Vue, Svelte, etc.)
+- CI/CD examples (GitHub Actions, GitLab, Vercel, etc.)
+- Extended analytics support (Plausible, Fathom, Mixpanel)
+- Additional validators (WebPageTest, SpeedCurve)
 
 ---
 
