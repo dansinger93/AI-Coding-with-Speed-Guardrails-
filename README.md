@@ -91,6 +91,22 @@ The script will:
 
 ---
 
+## The Goal
+
+Every code change is validated to achieve this:
+
+```
+┌─────────────┬──────────────┬─────────────┬────────┐
+│  Performance│ Accessibility│  Best       │  SEO   │
+│    100      │     100      │ Practices   │  100   │
+│             │              │    100      │        │
+└─────────────┴──────────────┴─────────────┴────────┘
+```
+
+Plus: **Real user metrics don't regress** (GA Core Web Vitals, GSC rankings)
+
+---
+
 ## How It Works: The 3-Phase Loop
 
 ### Phase 1 — Establish Baseline (Before Writing Code)
