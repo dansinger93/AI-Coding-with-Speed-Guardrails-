@@ -47,6 +47,113 @@ Do NOT ignore failures. A failed Lighthouse check means your code is rejected.
 
 ---
 
+## Performance Playbook — Common Bottlenecks and Fixes
+
+### Total Blocking Time (TBT) — The #1 Killer
+
+TBT fails because JavaScript runs on the main thread during page load. The biggest offenders:
+
+**Animation libraries in shared components are the most dangerous.**
+A library like Framer Motion (~100KB) loaded in a Navbar or Layout component forces its
+entire bundle into the critical-path shared chunk that loads on EVERY page. Even if you
+only used it for a simple fade-in, the full library ships.
+
+Fix: Replace JS-driven animations with CSS animations. They run on the compositor thread
+(zero main thread cost) and have no bundle weight.
+
+```css
+/* globals.css — define once, use everywhere */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+```
+
+```tsx
+// Before (Framer Motion — blocks main thread, adds ~100KB)
+<motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+
+// After (CSS — zero JS cost)
+<div style={{ animation: "fade-up 0.6s cubic-bezier(0.22,1,0.36,1) both" }}>
+```
+
+For interactive enter/exit animations (dropdowns, toasts, modals), use Tailwind's
+`animate-in` utilities: `fade-in-0 slide-in-from-bottom-4 zoom-in-95 duration-200`.
+
+**How to identify which chunk is causing TBT:**
+1. In the Lighthouse report, note the slow chunk filenames (e.g. `abc123.js`)
+2. Fetch the chunk from production: `curl https://your-site.com/_next/static/chunks/abc123.js`
+3. Search for library identifiers: `framer`, `AnimatePresence`, `motion`, `gsap`, etc.
+4. Remove that library from the component(s) listed in that chunk
+
+---
+
+### LCP (Largest Contentful Paint)
+
+**CSS `background-image` is invisible to the preload scanner.**
+If your hero/above-fold image is set via CSS `background-image`, the browser cannot
+discover it until CSS is parsed — too late to preload. Use `<img>` or Next.js `<Image>`.
+
+```tsx
+// Wrong — browser discovers this too late
+<div style={{ backgroundImage: "url('/hero.webp')" }} />
+
+// Right — preload scanner finds it immediately
+<Image src="/hero.webp" fetchPriority="high" preload={true} alt="" fill />
+```
+
+**Next.js 16+: `priority` prop is deprecated.**
+Use `fetchPriority="high"` + `preload={true}` instead.
+```tsx
+// Next.js 15 and earlier
+<Image src="..." priority />
+
+// Next.js 16+
+<Image src="..." fetchPriority="high" preload={true} />
+```
+
+**Image delivery savings add up fast.**
+Lighthouse's "Properly size images" audit flags exact savings. A background image
+at opacity 0.1 can be compressed to quality 50 with no visible difference.
+Always convert to WebP and resize to actual display dimensions.
+
+**Bypass the image optimization pipeline for static assets on self-hosted deployments.**
+`/_next/image` runs server-side processing on every request. On non-Vercel hosting
+this adds latency on every image load. Pre-optimize images and use `unoptimized` on `<Image>`:
+```tsx
+<Image src="/already-optimized.webp" unoptimized ... />
+```
+
+---
+
+### Testing: Production URL vs Localhost
+
+Always test against the production URL when one is available. Localhost scores can
+differ from production by 10-30 points because:
+- No CDN (missing compression, HTTP/2, edge caching)
+- Missing Brotli/gzip from production server
+- Dev mode bundles are larger and unminified
+- Network conditions differ
+
+To test production: set `url` in `lighthouserc.js` to your live URL and remove
+`startServerCommand`. The `check-speed.js` script skips the build step automatically.
+
+---
+
+### Accessibility
+
+**Color contrast is the most common failure.**
+`text-foreground/40` (opacity modifier) typically produces ~2.5:1 — well below WCAG AA (4.5:1).
+Use a named color with a known contrast ratio instead of opacity-modified text.
+
+**Check contrast before shipping:**
+```
+#111827 at 40% opacity on white ≈ 2.5:1  — FAILS
+#78716C (muted gray) on white   ≈ 5.1:1  — PASSES
+```
+
+---
+
 ## Phase 3 — Validate Against Real User Data (After Lighthouse Passes)
 
 Once Lighthouse reports 100%, validate that your changes do not introduce regressions

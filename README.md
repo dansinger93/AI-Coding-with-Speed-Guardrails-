@@ -219,6 +219,29 @@ npm install -D @lhci/cli
 **"Cannot connect to localhost:3000"**
 - Ensure `npm run start` or `npm run dev` works for your project
 - Update the start command in `scripts/check-speed.js`
+- Or switch to testing your production URL directly (see below)
+
+**"My Lighthouse score is 90+ locally but fails in CI / on the real site"**
+
+Localhost and production can diverge by 10-30 points. The gap comes from:
+- Production has CDN, Brotli compression, HTTP/2 — localhost does not
+- Dev mode (`npm run dev`) ships unminified bundles that inflate TBT artificially
+- Always run `npm run build && npm run start` (production mode), not `npm run dev`
+
+To eliminate the gap entirely, point `lighthouserc.js` at your live production URL:
+```js
+collect: {
+  numberOfRuns: 3,
+  url: ['https://your-site.com'],
+  // no startServerCommand needed
+}
+```
+`check-speed.js` detects the https URL and skips the build step automatically.
+
+**"Scores are inconsistent — pass one run, fail the next"**
+
+Single-run Lighthouse scores swing ±10 points. Use `numberOfRuns: 3` in `lighthouserc.js`
+(already the default in this repo). Never diagnose a score from a single run.
 
 ### Analytics setup issues
 
@@ -246,6 +269,18 @@ This is rare but can happen if:
 - Third-party scripts (analytics, ads) are slower in production
 
 Check `.perf-baseline.json` and the validate report to see which metric regressed, then focus your optimization there.
+
+### "TBT is high even though I don't have large images or blocking scripts"
+
+TBT is almost always caused by JavaScript running on the main thread. The most common
+hidden source: **animation libraries (Framer Motion, GSAP, AOS) imported in shared
+layout components** (Navbar, Header, Footer, Layout wrappers).
+
+Because these components render on every page, their dependencies end up in the
+critical-path shared chunk — loaded synchronously on every navigation.
+
+Fix: replace JS animations in shared components with CSS keyframe animations or
+Tailwind's `animate-in` utilities. See the CLAUDE.md Performance Playbook for details.
 
 ---
 
